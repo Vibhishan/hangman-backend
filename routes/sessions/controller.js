@@ -1,34 +1,31 @@
-function CreateSession(req, res) {
-    console.log(req.headers);
+const { Word, GameSession, sequelize } = require("../../models");
+const { serializeGameSession } = require("../../serializers/gameSession");
+const { playWordInGameSession } = require("../../services/gameSessionService");
+
+async function CreateSession(req, res) {
   const name = req.body.name;
+  const word = await Word.findOne({
+    order: [sequelize.random()],
+  });
+  const gameSession = await GameSession.create({
+    playerName: name,
+    playedLetters: "",
+    wordId: word.id,
+    startedAt: new Date(),
+    finishedAt: null,
+  });
 
-  // TODO: We will do something with the name
-
-  // create json object of session
-  const response = {
-    id: "123",
-    livesLeft: 6,
-    result: false,
-    maskedWord: ["_", "_", "_", "_", "_"],
-  };
-
-  res.status(200).json(response);
+  res.status(200).json(await serializeGameSession(gameSession));
 }
 
-function PlaySession(req, res) {
+async function PlaySession(req, res) {
   const id = req.params.id;
   const letter = req.body.letter;
+  const gameSession = await GameSession.findByPk(id);
 
-  // TODO: We will do something with the letter
+  await playWordInGameSession(gameSession, letter);
 
-  const response = {
-    id: "123",
-    livesLeft: 5,
-    result: false,
-    maskedWord: ["_", "_", "_", "_", "_"],
-  };
-
-  res.status(200).json(response);
+  res.status(200).json(await serializeGameSession(gameSession));
 }
 
 module.exports = {
